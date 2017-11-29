@@ -66,7 +66,8 @@ SDL_Scancode waitKey(Uint32 time) {
     const int timePiece = 5;
     //Event handler
     SDL_Event e;
-    for (int i = 0; i < time / timePiece; ++i) {
+    int loop = time != 0 ? (time >= timePiece ? time / timePiece : 1) : INT_MAX;
+    for (int i = 0; i < loop; ++i) {
         SDL_Delay(timePiece);
         //Handle events on queue
         if (SDL_PollEvent(&e) != 0) {
