@@ -38,11 +38,13 @@ void putRGB(SDL_Surface *surface, int x, int y, RGB *rgb);
 
 void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba);
 
-bool createSurface(int w, int h, SDL_Surface **image);
+bool createSurfaceColorful(int w, int h, SDL_Surface **image);
 
 bool createSurfaceWithRGB(int w, int h, RGB *rgb, SDL_Surface **image);
 
 bool createSurfaceWithRGBA(int w, int h, RGBA *rgba, SDL_Surface **image);
+
+bool createSurfaceGrayscale(int width, int height, Uint8 gray, SDL_Surface **image);
 
 void deleteSurface(SDL_Surface **image);
 

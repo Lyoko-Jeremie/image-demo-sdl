@@ -244,7 +244,7 @@ void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba) {
 
 
 FLAG_PUBLIC
-bool createSurface(int width, int height, SDL_Surface **image) {
+bool createSurfaceColorful(int width, int height, SDL_Surface **image) {
     RGB rgb;
     rgb.r = 0;
     rgb.g = 0;
@@ -289,6 +289,28 @@ bool createSurfaceWithRGBA(int width, int height, RGBA *rgba, SDL_Surface **imag
     }
 
     clearSurfaceWithRGBA(*image, rgba);
+
+    return true;
+}
+
+FLAG_PUBLIC
+bool createSurfaceGrayscale(int width, int height, Uint8 gray, SDL_Surface **image) {
+
+    *image = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
+
+    if (!*image) {
+        printf_s("Surface create failed.");
+        printf_s("Error :%s", SDL_GetError());
+        return false;
+    }
+
+    SDL_Color colors[256];
+    for (int i = 0; i < 256; i++) {
+        colors[i].r = colors[i].g = colors[i].b = (Uint8) i;
+    }
+    SDL_SetPaletteColors((*image)->format->palette, colors, 0, 256);
+
+    SDL_FillRect(*image, NULL, gray);
 
     return true;
 }

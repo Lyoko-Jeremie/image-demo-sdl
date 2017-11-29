@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <math.h>
 
 #include "global_header.h"
 
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
         return (1);
     }
 
+    // 从图片文件读取图像，在图像左上角画一个矩形，显示并保存图像
     {
         // 创建一个用来持有图像的图像表面指针
         SDL_Surface *image;
@@ -88,12 +90,13 @@ int main(int argc, char *argv[]) {
         deleteSurface(&image);
     }
 
+    // 创建一个空白的图像，在图像左上角画一个矩形，销毁图像
     {
         // 创建一个用来持有图像的图像表面指针
         SDL_Surface *picture;
 
-        // 创建一个宽800高600的新的黑色的图像表面并由picture持有
-        if (!createSurface(800, 600, &picture)) {
+        // 创建一个宽800高600的新的黑色的彩色图像表面并由picture持有
+        if (!createSurfaceColorful(800, 600, &picture)) {
             return (1);
         }
 
@@ -106,7 +109,6 @@ int main(int argc, char *argv[]) {
         for (int y = 0; y != 100; ++y) {
             for (int x = 0; x != 100; ++x) {
                 RGB rgb;
-                getRGB(picture, x, y, &rgb);
 
                 rgb.r = 255;
                 rgb.g = 255;
@@ -125,6 +127,103 @@ int main(int argc, char *argv[]) {
 
         waitKey(0);
         // 销毁picture持有的图像表面
+        deleteSurface(&picture);
+    }
+
+    // 下面这段代码会在宽高均为500的白色的图像左上角画一个绿色的空心矩形，并绘制一个蓝色的实心圆，最后显示并保存图像
+    // 矩形的坐标信息(x:50,y:50,w:101,h:101)
+    // 圆形的坐标信息(x:150,y:150,r:50)
+    {
+        SDL_Surface *picture;
+
+        if (!createSurfaceColorful(500, 500, &picture)) {
+            return (1);
+        }
+
+        // 将picture持有的图像表面清空为白色
+        {
+            RGB rgb;
+            rgb.r = 255;
+            rgb.g = 255;
+            rgb.b = 255;
+            clearSurfaceWithRGB(picture, &rgb);
+        }
+
+        if (!lockSurface(picture)) {
+            return (1);
+        }
+        assert(picture);
+        assert(picture->w > 300 && picture->h > 300);
+        for (int y = 50; y != 250; ++y) {
+            for (int x = 50; x != 250; ++x) {
+                // 使用勾股定理求像素坐标到点(100,100)的距离，绘制一个半径25的蓝色圆形
+                if ((pow(150 - x, 2) + pow(150 - y, 2)) < pow(50, 2)) {
+                    RGB rgb;
+                    rgb.r = 0;
+                    rgb.g = 0;
+                    rgb.b = 255;
+                    putRGB(picture, x, y, &rgb);
+                }
+            }
+        }
+        for (int y = 50; y != 151; ++y) {
+            for (int x = 50; x != 151; ++x) {
+                // 只将矩形边框处的颜色设置为绿色
+                if (y == 50 || y == 150 || x == 50 || x == 150) {
+                    RGB rgb;
+                    rgb.r = 0;
+                    rgb.g = 255;
+                    rgb.b = 0;
+                    putRGB(picture, x, y, &rgb);
+                }
+            }
+        }
+        unlockSurface(picture);
+
+        clearWindowWithBlack();
+        drawImageToWindow(picture);
+        saveImage2PNG("p.png", picture);
+
+        waitKey(0);
+        deleteSurface(&picture);
+    }
+
+    // 下面这段代码会创建一个简单的灰度图像，并使用渐变填充这个图像，最后显示并保存
+    {
+        SDL_Surface *picture;
+
+        // 创建一个宽800高600的新的初始值为0(黑色)的灰度图像表面并由picture持有
+        if (!createSurfaceGrayscale(256, 256, 0, &picture)) {
+            return (1);
+        }
+
+        if (!lockSurface(picture)) {
+            return (1);
+        }
+
+        assert(picture);
+        assert(picture->w >= 256 && picture->h >= 256);
+        // 从图像表面中获取图像的像素起点
+        Uint8 *basePtr = (Uint8 *) picture->pixels;
+        for (int y = 0; y != 256; ++y) {
+            for (int x = 0; x != 256; ++x) {
+                // 将当前下标所在处的像素设置为
+                basePtr[y * picture->pitch + x] = (Uint8) ((x + y) / 2);
+                // 小提示：计算机在内存中存储图像时，为了提高性能，每一行的长度可能不是图像的真实长度，
+                //      计算机可能会在每一行的末尾添加几个无用的字节以便将图像的每一行对齐到某一个整数，
+                //      并且在不同的计算机上，这个对齐的数字也有可能不尽相同。
+                //   故，在使用图像坐标计算真实的图像内存地址时，
+                //      行下标y需要乘以图像在内存中存储的每行填充后的宽度(pitch)才能计算出当前行在内存中的真实的起始地址。
+            }
+        }
+
+        unlockSurface(picture);
+
+        clearWindowWithBlack();
+        drawImageToWindow(picture);
+        saveImage2PNG("g.png", picture);
+
+        waitKey(0);
         deleteSurface(&picture);
     }
 
