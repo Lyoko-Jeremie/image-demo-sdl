@@ -38,5 +38,26 @@ void putRGB(SDL_Surface *surface, int x, int y, RGB *rgb);
 
 void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba);
 
+bool createSurface(int w, int h, SDL_Surface **image);
+
+bool createSurfaceWithRGB(int w, int h, RGB *rgb, SDL_Surface **image);
+
+bool createSurfaceWithRGBA(int w, int h, RGBA *rgba, SDL_Surface **image);
+
+void deleteSurface(SDL_Surface **image);
+
+void clearSurfaceWithRGB(SDL_Surface *image, RGB *rgb);
+
+void clearSurfaceWithRGBA(SDL_Surface *image, RGBA *rgba);
+
+bool loadImage(const char *filePath, SDL_Surface **image);
+
+bool saveImage2PNG(const char *filePath, SDL_Surface *surface);
+
+bool saveImage2JPG(const char *filePath, SDL_Surface *surface);
+
+bool lockSurface(SDL_Surface *image);
+
+bool unlockSurface(SDL_Surface *image);
 
 #endif //DEMO_SDL_IMGPROC_H

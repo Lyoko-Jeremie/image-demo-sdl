@@ -243,8 +243,114 @@ void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba) {
 }
 
 
+FLAG_PUBLIC
+bool createSurface(int width, int height, SDL_Surface **image) {
+    RGB rgb;
+    rgb.r = 0;
+    rgb.g = 0;
+    rgb.b = 0;
+    createSurfaceWithRGB(width, height, &rgb, image);
+}
 
+FLAG_PUBLIC
+bool createSurfaceWithRGB(int width, int height, RGB *rgb, SDL_Surface **image) {
+    RGBA rgba;
+    rgba.r = rgb->r;
+    rgba.g = rgb->g;
+    rgba.b = rgb->b;
+    rgba.a = 0;
+    createSurfaceWithRGBA(width, height, &rgba, image);
+}
 
+FLAG_PUBLIC
+bool createSurfaceWithRGBA(int width, int height, RGBA *rgba, SDL_Surface **image) {
 
+    //    Uint32 rmask, gmask, bmask, amask;
+    //    // SDL interprets each pixel as a 32-bit number, so our masks must depend on the endianness (byte order) of the machine
+    //#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    //    rmask = 0xff000000;
+    //    gmask = 0x00ff0000;
+    //    bmask = 0x0000ff00;
+    //    amask = 0x000000ff;
+    //#else
+    //    rmask = 0x000000ff;
+    //    gmask = 0x0000ff00;
+    //    bmask = 0x00ff0000;
+    //    amask = 0xff000000;
+    //#endif
+    //    *image = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
 
+    *image = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
+
+    if (!*image) {
+        printf_s("Surface create failed.");
+        printf_s("Error :%s", SDL_GetError());
+        return false;
+    }
+
+    clearSurfaceWithRGBA(*image, rgba);
+
+    return true;
+}
+
+FLAG_PUBLIC
+void deleteSurface(SDL_Surface **image) {
+    if (*image) {
+        SDL_FreeSurface(*image);
+        *image = NULL;
+    }
+}
+
+FLAG_PUBLIC
+void clearSurfaceWithRGB(SDL_Surface *image, RGB *rgb) {
+    Uint32 color;
+    rgb2pixel32(image, rgb, &color);
+    SDL_FillRect(image, NULL, color);
+}
+
+FLAG_PUBLIC
+void clearSurfaceWithRGBA(SDL_Surface *image, RGBA *rgba) {
+    Uint32 color;
+    rgba2pixel32(image, rgba, &color);
+    SDL_FillRect(image, NULL, color);
+}
+
+FLAG_PUBLIC
+bool loadImage(const char *filePath, SDL_Surface **image) {
+    *image = IMG_Load(filePath);
+    if (!*image) {
+        printf_s("IMG_Load: %s\n", IMG_GetError());
+        return false;
+    }
+    return true;
+}
+
+FLAG_PUBLIC
+bool saveImage2PNG(const char *filePath, SDL_Surface *surface) {
+    IMG_SavePNG(surface, filePath);
+    return true;
+}
+
+FLAG_PUBLIC
+bool saveImage2JPG(const char *filePath, SDL_Surface *surface) {
+    IMG_SaveJPG(surface, filePath, 100);
+    return true;
+}
+
+FLAG_PUBLIC
+bool lockSurface(SDL_Surface *image) {
+    if (SDL_MUSTLOCK(image) && SDL_LockSurface(image) != 0) {
+        printf_s("SDL_LockSurface Failed.\n");
+        return false;
+    }
+    return true;
+}
+
+FLAG_PUBLIC
+bool unlockSurface(SDL_Surface *image) {
+    if (SDL_MUSTLOCK(image)) {
+        SDL_UnlockSurface(image);
+    }
+    return true;
+}
 

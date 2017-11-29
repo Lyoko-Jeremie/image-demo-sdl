@@ -10,14 +10,20 @@
 #include <stdbool.h>
 
 #include "SDL.h"
+#include "imgproc.h"
 
 bool initWindow(char *name, int w, int h);
 
 void closeWindow();
 
-void showImageOnWindow(SDL_Surface *image);
+void drawImageToWindow(SDL_Surface *image);
 
 SDL_Scancode waitKey(Uint32 time);
 
+void clearWindowWithRGB(RGB *rgb);
+
+void clearWindowWithRGBA(RGBA *rgba);
+
+void clearWindowWithBlack();
 
 #endif //DEMO_SDL_HIGHGUI_H

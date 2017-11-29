@@ -19,5 +19,5 @@ link_libraries(
         SDL2_image
 )
 
-set(SOURCE_FILES main.c imgproc.c imgproc.h highgui.h highgui.c)
+set(SOURCE_FILES main.c imgproc.c imgproc.h highgui.h highgui.c global_header.h global_header.c)
 add_executable(demo_sdl ${SOURCE_FILES})
