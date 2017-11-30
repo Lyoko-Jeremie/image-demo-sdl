@@ -376,3 +376,13 @@ bool unlockSurface(SDL_Surface *image) {
     return true;
 }
 
+FLAG_PUBLIC
+void cloneSurface(SDL_Surface *const *old, SDL_Surface **new) {
+    if (*new) {
+        SDL_FreeSurface(*new);
+        *new = NULL;
+    }
+    SDL_Surface *const ptr = (*old);
+    *new = SDL_ConvertSurface(ptr, ptr->format, 0);
+}
+

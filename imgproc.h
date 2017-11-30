@@ -46,6 +46,8 @@ bool createSurfaceWithRGBA(int w, int h, RGBA *rgba, SDL_Surface **image);
 
 bool createSurfaceGrayscale(int width, int height, Uint8 gray, SDL_Surface **image);
 
+void cloneSurface(SDL_Surface *const *old, SDL_Surface **new);
+
 void deleteSurface(SDL_Surface **image);
 
 void clearSurfaceWithRGB(SDL_Surface *image, RGB *rgb);

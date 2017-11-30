@@ -14,6 +14,13 @@
 #define FLAG_PRIVATE
 
 
+#define WINDOW_DRAW_MODE_TEXTURE 1
+#define WINDOW_DRAW_MODE_SURFACE 2
+
+// use which mode to draw window
+#define WINDOW_DRAW_MODE WINDOW_DRAW_MODE_TEXTURE
+//#define WINDOW_DRAW_MODE WINDOW_DRAW_MODE_SURFACE
+
 //The window we'll be rendering to
 FLAG_PRIVATE
 SDL_Window *gWindow = NULL;
@@ -21,6 +28,15 @@ SDL_Window *gWindow = NULL;
 //The surface contained by the window
 FLAG_PRIVATE
 SDL_Surface *gWindowScreenSurface = NULL;
+
+FLAG_PRIVATE
+SDL_Renderer *gWindowRenderer = NULL;
+
+FLAG_PRIVATE
+SDL_Texture *gTextureLast = NULL;
+
+FLAG_PRIVATE
+SDL_Surface *gSurfaceLast = NULL;
 
 FLAG_PUBLIC
 bool initWindow(char *name, int w, int h) {
@@ -43,21 +59,27 @@ bool initWindow(char *name, int w, int h) {
     //Get window surface
     gWindowScreenSurface = SDL_GetWindowSurface(gWindow);
 
-    //    // We must call SDL_CreateRenderer in order for draw calls to affect this window.
-    //    gWindowRenderer = SDL_CreateRenderer(gWindow, -1, 0);
-    //    // Select the color for drawing. It is set to red here.
-    //    SDL_SetRenderDrawColor(gWindowRenderer, 255, 0, 0, 255);
-    //    // Clear the entire screen to our selected color.
-    //    SDL_RenderClear(gWindowRenderer);
-    //    // Up until now everything was drawn behind the scenes.
-    //    // This will show the new, red contents of the window.
-    //    SDL_RenderPresent(gWindowRenderer);
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+    // We must call SDL_CreateRenderer in order for draw calls to affect this window.
+    gWindowRenderer = SDL_CreateRenderer(gWindow, -1, 0);
+    // Select the color for drawing. It is set to black here.
+    SDL_SetRenderDrawColor(gWindowRenderer, 0, 0, 0, 255);
+    // Clear the entire screen to our selected color.
+    SDL_RenderClear(gWindowRenderer);
+    // Up until now everything was drawn behind the scenes.
+    // This will show the new, black contents of the window.
+    SDL_RenderPresent(gWindowRenderer);
+#endif  // WINDOW_DRAW_MODE_TEXTURE
 
     return true;
 }
 
 FLAG_PUBLIC
 void closeWindow() {
+    if (gWindowRenderer) {
+        SDL_DestroyRenderer(gWindowRenderer);
+        gWindowRenderer = NULL;
+    }
     if (gWindow) {
         //Destroy window
         SDL_DestroyWindow(gWindow);
@@ -65,15 +87,90 @@ void closeWindow() {
     }
 }
 
-FLAG_PUBLIC
-void drawImageToWindow(SDL_Surface *image) {
+FLAG_PRIVATE
+void updateRender() {
+    if (gTextureLast) {
+        int dw = 0, dh = 0;
+        int sw = 0, sh = 0;
+        SDL_GetRendererOutputSize(gWindowRenderer, &dw, &dh);
+        SDL_QueryTexture(gTextureLast, NULL, NULL, &sw, &sh);
+        if (dw > 0 && dh > 0 && sw > 0 && sh > 0) {
+            SDL_Rect r, t;
+
+            r.x = r.y = t.x = t.y = 0;
+            r.w = t.w = dw < sw ? dw : sw;
+            r.h = t.h = dh < sh ? dh : sh;
+
+
+            SDL_RenderCopy(gWindowRenderer, gTextureLast, &t, &r);
+            SDL_RenderPresent(gWindowRenderer);
+        }
+    }
+}
+
+FLAG_PRIVATE
+void updateSurface() {
+    if (gSurfaceLast) {
+        //Apply the image
+        SDL_BlitSurface(gSurfaceLast, NULL, gWindowScreenSurface, NULL);
+        //Update the surface
+        SDL_UpdateWindowSurface(gWindow);
+    }
+}
+
+FLAG_PRIVATE
+void drawImageToWindowSurface(SDL_Surface *image) {
     if (!gWindowScreenSurface) {
         return;
     }
-    //Apply the image
-    SDL_BlitSurface(image, NULL, gWindowScreenSurface, NULL);
-    //Update the surface
-    SDL_UpdateWindowSurface(gWindow);
+    cloneSurface(&image, &gSurfaceLast);
+    updateSurface();
+}
+
+FLAG_PRIVATE
+void destroyTextureLast() {
+    if (gTextureLast) {
+        SDL_DestroyTexture(gTextureLast);
+        gTextureLast = NULL;
+    }
+}
+
+FLAG_PRIVATE
+void destroySurfaceLast() {
+    if (gSurfaceLast) {
+        SDL_FreeSurface(gSurfaceLast);
+        gSurfaceLast = NULL;
+    }
+}
+
+FLAG_PRIVATE
+void drawImageToWindowTexture(SDL_Surface *image) {
+    if (!gWindowRenderer) {
+        return;
+    }
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(gWindowRenderer, image);
+
+    if (texture == NULL) {
+        // fprintf_s(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        printf_s("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    destroyTextureLast();
+
+    gTextureLast = texture;
+    updateRender();
+}
+
+FLAG_PUBLIC
+void drawImageToWindow(SDL_Surface *image) {
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+    drawImageToWindowTexture(image);
+#endif  // WINDOW_DRAW_MODE_TEXTURE
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
+    drawImageToWindowSurface(image);
+#endif  // WINDOW_DRAW_MODE_SURFACE
 }
 
 /**
@@ -89,16 +186,18 @@ SDL_Scancode waitKey(Uint32 time) {
     int loop = time != 0 ? (time >= timePiece ? time / timePiece : 1) : INT_MAX;
     for (int i = 0; i < loop; ++i) {
         SDL_Delay(timePiece);
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+        updateRender();
+#endif  // WINDOW_DRAW_MODE_TEXTURE
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
+        updateSurface();
+#endif  // WINDOW_DRAW_MODE_SURFACE
         //Handle events on queue
         if (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
-                // quit
-                return SDL_SCANCODE_UNKNOWN;
-            }
             switch (e.type) {
                 case SDL_QUIT:
-                    // TODO quit
-                    break;
+                    // quit
+                    return e.key.keysym.scancode;
                 case SDL_KEYUP:
                     return e.key.keysym.scancode;
                 default:
@@ -127,22 +226,38 @@ void clearWindowWithBlack() {
 
 FLAG_PUBLIC
 void clearWindowWithRGBA(RGBA *rgba) {
-    if (!gWindowScreenSurface) {
+    if (!gWindowRenderer) {
         return;
     }
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+    destroyTextureLast();
+    SDL_SetRenderDrawColor(gWindowRenderer, rgba->r, rgba->g, rgba->b, rgba->a);
+    SDL_RenderClear(gWindowRenderer);
+    SDL_RenderPresent(gWindowRenderer);
+#endif  // WINDOW_DRAW_MODE_TEXTURE
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
     Uint32 color;
     rgba2pixel32(gWindowScreenSurface, rgba, &color);
     SDL_FillRect(gWindowScreenSurface, NULL, color);
+#endif  // WINDOW_DRAW_MODE_SURFACE
 }
 
 FLAG_PUBLIC
 void clearWindowWithRGB(RGB *rgb) {
-    if (!gWindowScreenSurface) {
+    if (!gWindowRenderer) {
         return;
     }
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+    destroyTextureLast();
+    SDL_SetRenderDrawColor(gWindowRenderer, rgb->r, rgb->g, rgb->b, 255);
+    SDL_RenderClear(gWindowRenderer);
+    SDL_RenderPresent(gWindowRenderer);
+#endif  // WINDOW_DRAW_MODE_TEXTURE
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
     Uint32 color;
     rgb2pixel32(gWindowScreenSurface, rgb, &color);
     SDL_FillRect(gWindowScreenSurface, NULL, color);
+#endif  // WINDOW_DRAW_MODE_SURFACE
 }
 
 
