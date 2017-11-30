@@ -18,6 +18,8 @@ void closeWindow();
 
 void drawImageToWindow(SDL_Surface *image);
 
+void drawImageToWindowWithScale(SDL_Surface *image, double scale);
+
 SDL_Scancode waitKey(Uint32 time);
 
 void clearWindowWithRGB(RGB *rgb);

@@ -38,6 +38,9 @@ SDL_Texture *gTextureLast = NULL;
 FLAG_PRIVATE
 SDL_Surface *gSurfaceLast = NULL;
 
+FLAG_PRIVATE
+double gScaleLast = 1.0;
+
 FLAG_PUBLIC
 bool initWindow(char *name, int w, int h) {
     if (gWindow) {
@@ -53,7 +56,7 @@ bool initWindow(char *name, int w, int h) {
             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
     );
     if (gWindow == NULL) {
-        fprintf_s(stderr,"Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        fprintf_s(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
     //Get window surface
@@ -74,19 +77,6 @@ bool initWindow(char *name, int w, int h) {
     return true;
 }
 
-FLAG_PUBLIC
-void closeWindow() {
-    if (gWindowRenderer) {
-        SDL_DestroyRenderer(gWindowRenderer);
-        gWindowRenderer = NULL;
-    }
-    if (gWindow) {
-        //Destroy window
-        SDL_DestroyWindow(gWindow);
-        gWindow = NULL;
-    }
-}
-
 FLAG_PRIVATE
 void updateRender() {
     if (gTextureLast) {
@@ -95,12 +85,17 @@ void updateRender() {
         SDL_GetRendererOutputSize(gWindowRenderer, &dw, &dh);
         SDL_QueryTexture(gTextureLast, NULL, NULL, &sw, &sh);
         if (dw > 0 && dh > 0 && sw > 0 && sh > 0) {
+            sw *= gScaleLast;
+            sh *= gScaleLast;
+
             SDL_Rect r, t;
 
             r.x = r.y = t.x = t.y = 0;
             r.w = t.w = dw < sw ? dw : sw;
             r.h = t.h = dh < sh ? dh : sh;
 
+            t.w /= gScaleLast;
+            t.h /= gScaleLast;
 
             SDL_RenderCopy(gWindowRenderer, gTextureLast, &t, &r);
             SDL_RenderPresent(gWindowRenderer);
@@ -116,15 +111,6 @@ void updateSurface() {
         //Update the surface
         SDL_UpdateWindowSurface(gWindow);
     }
-}
-
-FLAG_PRIVATE
-void drawImageToWindowSurface(SDL_Surface *image) {
-    if (!gWindowScreenSurface) {
-        return;
-    }
-    cloneSurface(&image, &gSurfaceLast);
-    updateSurface();
 }
 
 FLAG_PRIVATE
@@ -144,7 +130,17 @@ void destroySurfaceLast() {
 }
 
 FLAG_PRIVATE
-void drawImageToWindowTexture(SDL_Surface *image) {
+void drawImageToWindowSurface(SDL_Surface *image, double scale) {
+    fprintf_s(stderr, "Warning : scale on WINDOW_DRAW_MODE_SURFACE are not implement.\n");
+    if (!gWindowScreenSurface) {
+        return;
+    }
+    cloneSurface(&image, &gSurfaceLast);
+    updateSurface();
+}
+
+FLAG_PRIVATE
+void drawImageToWindowTexture(SDL_Surface *image, double scale) {
     if (!gWindowRenderer) {
         return;
     }
@@ -152,24 +148,34 @@ void drawImageToWindowTexture(SDL_Surface *image) {
     SDL_Texture *texture = SDL_CreateTextureFromSurface(gWindowRenderer, image);
 
     if (texture == NULL) {
-        // fprintf_s(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
-        fprintf_s(stderr,"CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        fprintf_s(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
         return;
     }
 
     destroyTextureLast();
 
     gTextureLast = texture;
+    gScaleLast = scale;
     updateRender();
 }
 
 FLAG_PUBLIC
 void drawImageToWindow(SDL_Surface *image) {
 #if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
-    drawImageToWindowTexture(image);
+    drawImageToWindowTexture(image, 1);
 #endif  // WINDOW_DRAW_MODE_TEXTURE
 #if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
-    drawImageToWindowSurface(image);
+    drawImageToWindowSurface(image, 1);
+#endif  // WINDOW_DRAW_MODE_SURFACE
+}
+
+FLAG_PUBLIC
+void drawImageToWindowWithScale(SDL_Surface *image, double scale) {
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
+    drawImageToWindowTexture(image, scale);
+#endif  // WINDOW_DRAW_MODE_TEXTURE
+#if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_SURFACE
+    drawImageToWindowSurface(image, scale);
 #endif  // WINDOW_DRAW_MODE_SURFACE
 }
 
@@ -229,6 +235,7 @@ void clearWindowWithRGBA(RGBA *rgba) {
     if (!gWindowRenderer) {
         return;
     }
+    gScaleLast = 0;
 #if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
     destroyTextureLast();
     SDL_SetRenderDrawColor(gWindowRenderer, rgba->r, rgba->g, rgba->b, rgba->a);
@@ -247,6 +254,7 @@ void clearWindowWithRGB(RGB *rgb) {
     if (!gWindowRenderer) {
         return;
     }
+    gScaleLast = 0;
 #if WINDOW_DRAW_MODE == WINDOW_DRAW_MODE_TEXTURE
     destroyTextureLast();
     SDL_SetRenderDrawColor(gWindowRenderer, rgb->r, rgb->g, rgb->b, 255);
@@ -260,4 +268,18 @@ void clearWindowWithRGB(RGB *rgb) {
 #endif  // WINDOW_DRAW_MODE_SURFACE
 }
 
+FLAG_PUBLIC
+void closeWindow() {
+    destroySurfaceLast();
+    destroyTextureLast();
+    if (gWindowRenderer) {
+        SDL_DestroyRenderer(gWindowRenderer);
+        gWindowRenderer = NULL;
+    }
+    if (gWindow) {
+        //Destroy window
+        SDL_DestroyWindow(gWindow);
+        gWindow = NULL;
+    }
+}
 
