@@ -26,8 +26,8 @@ bool initEverything() {
     int flags = IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF | IMG_INIT_WEBP;
     int initted = IMG_Init(flags);
     if ((initted & flags) != flags) {
-        printf_s("IMG_Init: Failed to init required jpg and png support!\n");
-        printf_s("IMG_Init: %s\n", IMG_GetError());
+        fprintf_s(stderr,"IMG_Init: Failed to init required jpg and png support!\n");
+        fprintf_s(stderr,"IMG_Init: %s\n", IMG_GetError());
         // handle error
         return false;
     }

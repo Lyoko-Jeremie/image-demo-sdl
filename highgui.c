@@ -53,7 +53,7 @@ bool initWindow(char *name, int w, int h) {
             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
     );
     if (gWindow == NULL) {
-        printf_s("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        fprintf_s(stderr,"Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
     //Get window surface
@@ -153,7 +153,7 @@ void drawImageToWindowTexture(SDL_Surface *image) {
 
     if (texture == NULL) {
         // fprintf_s(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
-        printf_s("CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        fprintf_s(stderr,"CreateTextureFromSurface failed: %s\n", SDL_GetError());
         return;
     }
 

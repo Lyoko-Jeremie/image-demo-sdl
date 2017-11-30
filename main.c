@@ -222,7 +222,9 @@ int main(int argc, char *argv[]) {
         clearWindowWithBlack();
         drawImageToWindow(picture);
         saveImage2PNG("g.png", picture);
+        saveImage2JPG("g.jpg", picture);
 
+        printf_s("end.");
         waitKey(0);
         deleteSurface(&picture);
     }
