@@ -60,6 +60,8 @@ bool saveImage2PNG(const char *filePath, SDL_Surface *surface);
 
 bool saveImage2JPG(const char *filePath, SDL_Surface *surface);
 
+bool saveImage2BMP(const char *filePath, SDL_Surface *surface);
+
 bool lockSurface(SDL_Surface *image);
 
 bool unlockSurface(SDL_Surface *image);

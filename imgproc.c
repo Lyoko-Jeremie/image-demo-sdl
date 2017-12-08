@@ -283,8 +283,8 @@ bool createSurfaceWithRGBA(int width, int height, RGBA *rgba, SDL_Surface **imag
     *image = SDL_CreateRGBSurface(0, width, height, 32, 0, 0, 0, 0);
 
     if (!*image) {
-        fprintf_s(stderr,"Surface create failed.");
-        fprintf_s(stderr,"Error :%s", SDL_GetError());
+        fprintf_s(stderr, "Surface create failed.");
+        fprintf_s(stderr, "Error :%s", SDL_GetError());
         return false;
     }
 
@@ -299,8 +299,8 @@ bool createSurfaceGrayscale(int width, int height, Uint8 gray, SDL_Surface **ima
     *image = SDL_CreateRGBSurface(0, width, height, 8, 0, 0, 0, 0);
 
     if (!*image) {
-        fprintf_s(stderr,"Surface create failed.");
-        fprintf_s(stderr,"Error :%s", SDL_GetError());
+        fprintf_s(stderr, "Surface create failed.");
+        fprintf_s(stderr, "Error :%s", SDL_GetError());
         return false;
     }
 
@@ -341,7 +341,7 @@ FLAG_PUBLIC
 bool loadImage(const char *filePath, SDL_Surface **image) {
     *image = IMG_Load(filePath);
     if (!*image) {
-        fprintf_s(stderr,"IMG_Load: %s\n", IMG_GetError());
+        fprintf_s(stderr, "IMG_Load: %s\n", IMG_GetError());
         return false;
     }
     return true;
@@ -350,7 +350,7 @@ bool loadImage(const char *filePath, SDL_Surface **image) {
 FLAG_PUBLIC
 bool saveImage2PNG(const char *filePath, SDL_Surface *surface) {
     if (surface->format->BytesPerPixel == 1) {
-        fprintf_s(stderr,"saveImage2PNG cannot save a binary image.\nPlease use saveImage2JPG.\n");
+        fprintf_s(stderr, "saveImage2PNG cannot save a binary image.\nPlease use saveImage2JPG.\n");
         return false;
     }
     IMG_SavePNG(surface, filePath);
@@ -364,9 +364,15 @@ bool saveImage2JPG(const char *filePath, SDL_Surface *surface) {
 }
 
 FLAG_PUBLIC
+bool saveImage2BMP(const char *filePath, SDL_Surface *surface) {
+    SDL_SaveBMP(surface, filePath);
+    return true;
+}
+
+FLAG_PUBLIC
 bool lockSurface(SDL_Surface *image) {
     if (SDL_MUSTLOCK(image) && SDL_LockSurface(image) != 0) {
-        fprintf_s(stderr,"SDL_LockSurface Failed.\n");
+        fprintf_s(stderr, "SDL_LockSurface Failed.\n");
         return false;
     }
     return true;
