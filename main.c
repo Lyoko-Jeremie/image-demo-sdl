@@ -207,22 +207,25 @@ int main(int argc, char *argv[]) {
         Uint8 *basePtr = (Uint8 *) picture->pixels;
         for (int y = 0; y != 256; ++y) {
             for (int x = 0; x != 256; ++x) {
-                // 将当前下标所在处的像素设置为
+                // 设置当前下标所在处的像素     注意：像素的值总是介于0~255之间
                 basePtr[y * picture->pitch + x] = (Uint8) ((x + y) / 2);
                 // 小提示：计算机在内存中存储图像时，为了提高性能，每一行的长度可能不是图像的真实长度，
                 //      计算机可能会在每一行的末尾添加几个无用的字节以便将图像的每一行对齐到某一个整数，
                 //      并且在不同的计算机上，这个对齐的数字也有可能不尽相同。
                 //   故，在使用图像坐标计算真实的图像内存地址时，
                 //      行下标y需要乘以图像在内存中存储的每行填充后的宽度(pitch)才能计算出当前行在内存中的真实的起始地址。
+                // 注意：只有单通道的灰度图像可以使用此方式进行操作，
+                //      彩色图像的存储方式与单通道图像有所不同，请使用putRGB和getRGB来操作彩色图像
+                //      当然，也可以使用PutPixel来操作单通道的灰度图像
+
             }
         }
 
         unlockSurface(picture);
 
         clearWindowWithBlack();
-        drawImageToWindow(picture);
-        saveImage2PNG("g.png", picture);
-        saveImage2JPG("g.jpg", picture);
+        drawImageToWindowWithScale(picture, 10);
+        saveImage2BMP("g.bmp", picture);
 
         printf_s("end.");
         waitKey(0);
