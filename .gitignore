@@ -137,6 +137,6 @@ dkms.conf
 *.app
 
 /bin/
-/SDL/
+/obj/
 /demo-sdl.layout
 /demo-sdl.depend
