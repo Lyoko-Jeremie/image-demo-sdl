@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #include "highgui.h"
 #include "imgproc.h"
@@ -56,7 +57,7 @@ bool initWindow(char *name, int w, int h) {
             SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
     );
     if (gWindow == NULL) {
-        fprintf_s(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        fprintf(stderr, "Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return false;
     }
     //Get window surface
@@ -131,7 +132,7 @@ void destroySurfaceLast() {
 
 FLAG_PRIVATE
 void drawImageToWindowSurface(SDL_Surface *image, double scale) {
-    fprintf_s(stderr, "Warning : scale on WINDOW_DRAW_MODE_SURFACE are not implement.\n");
+    fprintf(stderr, "Warning : scale on WINDOW_DRAW_MODE_SURFACE are not implement.\n");
     if (!gWindowScreenSurface) {
         return;
     }
@@ -145,10 +146,11 @@ void drawImageToWindowTexture(SDL_Surface *image, double scale) {
         return;
     }
 
+    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0");
     SDL_Texture *texture = SDL_CreateTextureFromSurface(gWindowRenderer, image);
 
     if (texture == NULL) {
-        fprintf_s(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
+        fprintf(stderr, "CreateTextureFromSurface failed: %s\n", SDL_GetError());
         return;
     }
 

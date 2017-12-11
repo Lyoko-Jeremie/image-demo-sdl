@@ -14,13 +14,13 @@ int main(int argc, char *argv[]) {
 
     // 初始化图像环境
     if (!initEverything()) {
-        printf_s("init failed.");
+        printf("init failed.");
         return (1);
     }
 
     // 初始化显示窗口  并设置初始窗口大小为 宽800像素 高600像素
     if (initWindow("SDL Tutorial", 800, 600) != true) {
-        printf_s("window create failed.");
+        printf("window create failed.");
         return (1);
     }
 
@@ -30,12 +30,12 @@ int main(int argc, char *argv[]) {
         SDL_Surface *image;
         // 从图片文件读取图像表面并由image持有
         if (!loadImage("lena.png", &image)) {
-            printf_s("image load failed.");
+            printf("image load failed.");
             return (1);
         }
 
         // 打出显示图像表面的宽和高
-        printf_s("w:%d h:%d \n", image->w, image->h);
+        printf("w:%d h:%d \n", image->w, image->h);
 
         // 锁定图像表面
         // 注意：在操作图像表面的像素色彩是必须要锁定图像表面
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
         drawImageToWindowWithScale(picture, 10);
         saveImage2BMP("g.bmp", picture);
 
-        printf_s("end.");
+        printf("end.");
         waitKey(0);
         deleteSurface(&picture);
     }
