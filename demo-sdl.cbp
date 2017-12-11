@@ -30,7 +30,29 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-std=c99" />
+			<Add directory="./SDL/SDL2-2.0.7/i686-w64-mingw32/include/SDL2" />
+			<Add directory="./SDL/SDL2_image-2.0.2/i686-w64-mingw32/include/SDL2" />
 		</Compiler>
+		<Linker>
+			<Add library="SDL2" />
+			<Add library="SDL2main" />
+			<Add library="SDL2_image" />
+			<Add directory="./SDL/SDL2-2.0.7/i686-w64-mingw32/lib" />
+			<Add directory="./SDL/SDL2_image-2.0.2/i686-w64-mingw32/lib" />
+		</Linker>
+		<Unit filename="global_header.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="global_header.h" />
+		<Unit filename="highgui.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="highgui.h" />
+		<Unit filename="imgproc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="imgproc.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
