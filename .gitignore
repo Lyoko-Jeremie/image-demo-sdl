@@ -138,3 +138,5 @@ dkms.conf
 
 /bin/
 /SDL/
+/demo-sdl.layout
+/demo-sdl.depend
