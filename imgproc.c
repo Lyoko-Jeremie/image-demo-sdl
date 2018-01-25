@@ -242,6 +242,41 @@ void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba) {
     putPixel(surface, x, y, &pixels);
 }
 
+FLAG_PUBLIC
+bool cvtColorFromRGB2Gray(SDL_Surface *surfaceFrom, SDL_Surface **surfaceTo) {
+    if (!lockSurface(surfaceFrom)) {
+        return false;
+    }
+    const Uint8 bpp = surfaceFrom->format->BytesPerPixel;
+    if (bpp != 3 && bpp != 4) {
+        fprintf(stderr, "cvtColorFromRGB2Gray input a non-RGB image.");
+        unlockSurface(surfaceFrom);
+        return false;
+    }
+    SDL_Surface *picture;
+    if (!createSurfaceGrayscale(surfaceFrom->w, surfaceFrom->h, 0, &picture)) {
+        unlockSurface(surfaceFrom);
+        return false;
+    }
+    if (!lockSurface(picture)) {
+        unlockSurface(surfaceFrom);
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) picture->pixels;
+    for (int y = 0; y != surfaceFrom->h; ++y) {
+        for (int x = 0; x != surfaceFrom->w; ++x) {
+            RGB rgb;
+            getRGB(surfaceFrom, x, y, &rgb);
+            // https://dzone.com/articles/converting-an-image-to-grayscale-using-sdl2
+            uint8_t v = (uint8_t) (0.212671f * rgb.r + 0.715160f * rgb.g + 0.072169f * rgb.b);
+            basePtr[y * picture->w + x] = v;
+        }
+    }
+    unlockSurface(picture);
+    unlockSurface(surfaceFrom);
+    *surfaceTo = picture;
+    return true;
+}
 
 FLAG_PUBLIC
 bool createSurfaceColorful(int width, int height, SDL_Surface **image) {

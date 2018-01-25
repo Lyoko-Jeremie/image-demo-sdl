@@ -227,14 +227,62 @@ int main(int argc, char *argv[]) {
         drawImageToWindowWithScale(picture, 10);
         saveImage2BMP("g.bmp", picture);
 
-        printf("end.");
         waitKey(0);
         deleteSurface(&picture);
+    }
+
+    // 下面这段代码会从文件中读取图像，并转换为单通道灰度图像，然后对灰度图像执行操作，并显示操作后的图像
+    {
+        // 创建一个用来持有图像的图像表面指针
+        SDL_Surface *image;
+        // 从图片文件读取图像表面并由image持有
+        if (!loadImage("lena.png", &image)) {
+            printf("image load failed.");
+            return (1);
+        }
+
+        // 打出显示图像表面的宽和高
+        printf("w:%d h:%d \n", image->w, image->h);
+
+        // 创建一个用来持有单通道灰度图像的图像表面指针
+        SDL_Surface *imageGray;
+        // 转换RGB彩色图像到单通道灰度图像
+        if (!cvtColorFromRGB2Gray(image, &imageGray)) {
+            printf("image covert failed.");
+            return (1);
+        }
+
+        if (!lockSurface(imageGray)) {
+            return (1);
+        }
+
+        assert(imageGray);
+        // 从图像表面中获取图像的像素起点
+        Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+        for (int y = 0; y != imageGray->w; ++y) {
+            for (int x = 0; x != imageGray->h; ++x) {
+                // 从单通道灰度图像中读取一个像素
+                Uint8 pixel = basePtr[y * imageGray->pitch + x];
+                // 将一个像素写入到单通道图像
+                basePtr[y * imageGray->pitch + x] = pixel;
+            }
+        }
+
+        unlockSurface(imageGray);
+
+        clearWindowWithBlack();
+        drawImageToWindowWithScale(imageGray, 1);
+        saveImage2BMP("g.bmp", imageGray);
+
+        waitKey(0);
+        deleteSurface(&imageGray);
+        deleteSurface(&image);
     }
 
     // 关闭图像环境
     closeEverything();
 
+    printf("end.");
     return 0;
 }
 

@@ -38,6 +38,8 @@ void putRGB(SDL_Surface *surface, int x, int y, RGB *rgb);
 
 void putRGBA(SDL_Surface *surface, int x, int y, RGBA *rgba);
 
+bool cvtColorFromRGB2Gray(SDL_Surface *surfaceFrom, SDL_Surface **surfaceTo);
+
 bool createSurfaceColorful(int w, int h, SDL_Surface **image);
 
 bool createSurfaceWithRGB(int w, int h, RGB *rgb, SDL_Surface **image);
