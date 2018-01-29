@@ -263,12 +263,89 @@ int main(int argc, char *argv[]) {
             for (int x = 0; x != imageGray->h; ++x) {
                 // 从单通道灰度图像中读取一个像素
                 Uint8 pixel = basePtr[y * imageGray->pitch + x];
+                if (pixel < 128) {
+                    pixel = 0;
+                } else {
+                    pixel = 255;
+                }
                 // 将一个像素写入到单通道图像
                 basePtr[y * imageGray->pitch + x] = pixel;
             }
         }
 
         unlockSurface(imageGray);
+
+        if (true) {
+            for (int i = 0; i != 1; ++i) {
+                SDL_Surface *imageGray2 = NULL;
+                cloneSurface(&imageGray, &imageGray2);
+                if (!lockSurface(imageGray2)) {
+                    return (1);
+                }
+                assert(imageGray2);
+                Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+                for (int y = 1; y != imageGray2->w - 1; ++y) {
+                    for (int x = 1; x != imageGray2->h - 1; ++x) {
+                        if (basePtr[y * imageGray->pitch + x] == 0) {
+                            if (
+                                    basePtr[(y - 1) * imageGray->pitch + x - 1] == 255 ||
+                                    basePtr[(y - 1) * imageGray->pitch + x] == 255 ||
+                                    basePtr[(y - 1) * imageGray->pitch + x + 1] == 255 ||
+
+                                    basePtr[(y) * imageGray->pitch + x - 1] == 255 ||
+                                    basePtr[(y) * imageGray->pitch + x] == 255 ||
+                                    basePtr[(y) * imageGray->pitch + x + 1] == 255 ||
+
+                                    basePtr[(y + 1) * imageGray->pitch + x - 1] == 255 ||
+                                    basePtr[(y + 1) * imageGray->pitch + x] == 255 ||
+                                    basePtr[(y + 1) * imageGray->pitch + x + 1] == 255
+                                    ) {
+                                basePtr2[y * imageGray2->pitch + x] = 255;
+                            }
+                        }
+                    }
+                }
+                unlockSurface(imageGray2);
+                cloneSurface(&imageGray2, &imageGray);
+                deleteSurface(&imageGray2);
+            }
+        }
+
+        if (true) {
+            for (int i = 0; i != 1; ++i) {
+                SDL_Surface *imageGray2 = NULL;
+                cloneSurface(&imageGray, &imageGray2);
+                if (!lockSurface(imageGray2)) {
+                    return (1);
+                }
+                assert(imageGray2);
+                Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+                for (int y = 1; y != imageGray2->w - 1; ++y) {
+                    for (int x = 1; x != imageGray2->h - 1; ++x) {
+                        if (basePtr[y * imageGray->pitch + x] == 255) {
+                            if (
+                                    basePtr[(y - 1) * imageGray->pitch + x - 1] == 0 ||
+                                    basePtr[(y - 1) * imageGray->pitch + x] == 0 ||
+                                    basePtr[(y - 1) * imageGray->pitch + x + 1] == 0 ||
+
+                                    basePtr[(y) * imageGray->pitch + x - 1] == 0 ||
+                                    basePtr[(y) * imageGray->pitch + x] == 0 ||
+                                    basePtr[(y) * imageGray->pitch + x + 1] == 0 ||
+
+                                    basePtr[(y + 1) * imageGray->pitch + x - 1] == 0 ||
+                                    basePtr[(y + 1) * imageGray->pitch + x] == 0 ||
+                                    basePtr[(y + 1) * imageGray->pitch + x + 1] == 0
+                                    ) {
+                                basePtr2[y * imageGray2->pitch + x] = 0;
+                            }
+                        }
+                    }
+                }
+                unlockSurface(imageGray2);
+                cloneSurface(&imageGray2, &imageGray);
+                deleteSurface(&imageGray2);
+            }
+        }
 
         clearWindowWithBlack();
         drawImageToWindowWithScale(imageGray, 1);
