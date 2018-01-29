@@ -269,7 +269,7 @@ bool cvtColorFromRGB2Gray(SDL_Surface *surfaceFrom, SDL_Surface **surfaceTo) {
             getRGB(surfaceFrom, x, y, &rgb);
             // https://dzone.com/articles/converting-an-image-to-grayscale-using-sdl2
             uint8_t v = (uint8_t) (0.212671f * rgb.r + 0.715160f * rgb.g + 0.072169f * rgb.b);
-            basePtr[y * picture->w + x] = v;
+            basePtr[y * picture->pitch + x] = v;
         }
     }
     unlockSurface(picture);
@@ -422,12 +422,12 @@ bool unlockSurface(SDL_Surface *image) {
 }
 
 FLAG_PUBLIC
-void cloneSurface(SDL_Surface *const *old, SDL_Surface **new) {
-    if (*new) {
-        SDL_FreeSurface(*new);
-        *new = NULL;
+void cloneSurface(SDL_Surface *const *oldSurface, SDL_Surface **newSurface) {
+    if (*newSurface) {
+        SDL_FreeSurface(*newSurface);
+        *newSurface = NULL;
     }
-    SDL_Surface *const ptr = (*old);
-    *new = SDL_ConvertSurface(ptr, ptr->format, 0);
+    SDL_Surface *const ptr = (*oldSurface);
+    *newSurface = SDL_ConvertSurface(ptr, ptr->format, 0);
 }
 
