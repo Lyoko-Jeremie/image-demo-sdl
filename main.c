@@ -8,6 +8,13 @@
 #define FLAG_PUBLIC
 #define FLAG_PRIVATE
 
+bool erode(SDL_Surface **imageGrayPtr);
+
+bool dilate(SDL_Surface **imageGrayPtr);
+
+bool add(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCPtr);
+
+bool negative(SDL_Surface **imagePtr);
 
 int main(int argc, char *argv[]) {
     printf("Hello, World!\n");
@@ -276,76 +283,18 @@ int main(int argc, char *argv[]) {
         unlockSurface(imageGray);
 
         if (true) {
-            for (int i = 0; i != 1; ++i) {
-                SDL_Surface *imageGray2 = NULL;
-                cloneSurface(&imageGray, &imageGray2);
-                if (!lockSurface(imageGray2)) {
-                    return (1);
-                }
-                assert(imageGray2);
-                Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
-                for (int y = 1; y != imageGray2->w - 1; ++y) {
-                    for (int x = 1; x != imageGray2->h - 1; ++x) {
-                        if (basePtr[y * imageGray->pitch + x] == 0) {
-                            if (
-                                    basePtr[(y - 1) * imageGray->pitch + x - 1] == 255 ||
-                                    basePtr[(y - 1) * imageGray->pitch + x] == 255 ||
-                                    basePtr[(y - 1) * imageGray->pitch + x + 1] == 255 ||
-
-                                    basePtr[(y) * imageGray->pitch + x - 1] == 255 ||
-                                    basePtr[(y) * imageGray->pitch + x] == 255 ||
-                                    basePtr[(y) * imageGray->pitch + x + 1] == 255 ||
-
-                                    basePtr[(y + 1) * imageGray->pitch + x - 1] == 255 ||
-                                    basePtr[(y + 1) * imageGray->pitch + x] == 255 ||
-                                    basePtr[(y + 1) * imageGray->pitch + x + 1] == 255
-                                    ) {
-                                basePtr2[y * imageGray2->pitch + x] = 255;
-                            }
-                        }
-                    }
-                }
-                unlockSurface(imageGray2);
-                cloneSurface(&imageGray2, &imageGray);
-                deleteSurface(&imageGray2);
+            for (int i = 0; i != 5; ++i) {
+                dilate(&imageGray);
             }
         }
 
         if (true) {
-            for (int i = 0; i != 1; ++i) {
-                SDL_Surface *imageGray2 = NULL;
-                cloneSurface(&imageGray, &imageGray2);
-                if (!lockSurface(imageGray2)) {
-                    return (1);
-                }
-                assert(imageGray2);
-                Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
-                for (int y = 1; y != imageGray2->w - 1; ++y) {
-                    for (int x = 1; x != imageGray2->h - 1; ++x) {
-                        if (basePtr[y * imageGray->pitch + x] == 255) {
-                            if (
-                                    basePtr[(y - 1) * imageGray->pitch + x - 1] == 0 ||
-                                    basePtr[(y - 1) * imageGray->pitch + x] == 0 ||
-                                    basePtr[(y - 1) * imageGray->pitch + x + 1] == 0 ||
-
-                                    basePtr[(y) * imageGray->pitch + x - 1] == 0 ||
-                                    basePtr[(y) * imageGray->pitch + x] == 0 ||
-                                    basePtr[(y) * imageGray->pitch + x + 1] == 0 ||
-
-                                    basePtr[(y + 1) * imageGray->pitch + x - 1] == 0 ||
-                                    basePtr[(y + 1) * imageGray->pitch + x] == 0 ||
-                                    basePtr[(y + 1) * imageGray->pitch + x + 1] == 0
-                                    ) {
-                                basePtr2[y * imageGray2->pitch + x] = 0;
-                            }
-                        }
-                    }
-                }
-                unlockSurface(imageGray2);
-                cloneSurface(&imageGray2, &imageGray);
-                deleteSurface(&imageGray2);
+            for (int i = 0; i != 5; ++i) {
+                erode(&imageGray);
             }
         }
+
+        negative(&imageGray);
 
         clearWindowWithBlack();
         drawImageToWindowWithScale(imageGray, 1);
@@ -363,3 +312,137 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+
+bool erode(SDL_Surface **imageGrayPtr) {
+    SDL_Surface *imageGray = *imageGrayPtr;
+    SDL_Surface *imageGray2 = NULL;
+    cloneSurface(imageGrayPtr, &imageGray2);
+    if (!lockSurface(imageGray2)) {
+        deleteSurface(&imageGray2);
+        return false;
+    }
+    assert(imageGray2);
+    Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+    Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+    for (int y = 1; y != imageGray2->h - 1; ++y) {
+        for (int x = 1; x != imageGray2->w - 1; ++x) {
+            if (basePtr[y * imageGray->pitch + x] == 255) {
+                if (
+                        basePtr[(y - 1) * imageGray->pitch + x - 1] == 0 ||
+                        basePtr[(y - 1) * imageGray->pitch + x] == 0 ||
+                        basePtr[(y - 1) * imageGray->pitch + x + 1] == 0 ||
+
+                        basePtr[(y) * imageGray->pitch + x - 1] == 0 ||
+                        basePtr[(y) * imageGray->pitch + x] == 0 ||
+                        basePtr[(y) * imageGray->pitch + x + 1] == 0 ||
+
+                        basePtr[(y + 1) * imageGray->pitch + x - 1] == 0 ||
+                        basePtr[(y + 1) * imageGray->pitch + x] == 0 ||
+                        basePtr[(y + 1) * imageGray->pitch + x + 1] == 0
+                        ) {
+                    basePtr2[y * imageGray2->pitch + x] = 0;
+                }
+            }
+        }
+    }
+    unlockSurface(imageGray2);
+    cloneSurface(&imageGray2, imageGrayPtr);
+    deleteSurface(&imageGray2);
+    return true;
+}
+
+bool dilate(SDL_Surface **imageGrayPtr) {
+    SDL_Surface *imageGray = *imageGrayPtr;
+    SDL_Surface *imageGray2 = NULL;
+    cloneSurface(imageGrayPtr, &imageGray2);
+    if (!lockSurface(imageGray2)) {
+        deleteSurface(&imageGray2);
+        return false;
+    }
+    assert(imageGray2);
+    Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+    Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+    for (int y = 1; y != imageGray2->h - 1; ++y) {
+        for (int x = 1; x != imageGray2->w - 1; ++x) {
+            if (basePtr[y * imageGray->pitch + x] == 0) {
+                if (
+                        basePtr[(y - 1) * imageGray->pitch + x - 1] == 255 ||
+                        basePtr[(y - 1) * imageGray->pitch + x] == 255 ||
+                        basePtr[(y - 1) * imageGray->pitch + x + 1] == 255 ||
+
+                        basePtr[(y) * imageGray->pitch + x - 1] == 255 ||
+                        basePtr[(y) * imageGray->pitch + x] == 255 ||
+                        basePtr[(y) * imageGray->pitch + x + 1] == 255 ||
+
+                        basePtr[(y + 1) * imageGray->pitch + x - 1] == 255 ||
+                        basePtr[(y + 1) * imageGray->pitch + x] == 255 ||
+                        basePtr[(y + 1) * imageGray->pitch + x + 1] == 255
+                        ) {
+                    basePtr2[y * imageGray2->pitch + x] = 255;
+                }
+            }
+        }
+    }
+    unlockSurface(imageGray2);
+    cloneSurface(&imageGray2, imageGrayPtr);
+    deleteSurface(&imageGray2);
+    return true;
+}
+
+bool add(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCPtr) {
+    SDL_Surface *imageA = *imageAPtr;
+    SDL_Surface *imageB = *imageBPtr;
+
+    if (!(imageA->w == imageB->w && imageA->h == imageB->h)) {
+        return false;
+    }
+
+    SDL_Surface *imageT = NULL;
+    cloneSurface(&imageA, &imageT);
+
+    if (!lockSurface(imageA)) {
+        deleteSurface(&imageT);
+        return false;
+    }
+    if (!lockSurface(imageB)) {
+        unlockSurface(imageA);
+        deleteSurface(&imageT);
+        return false;
+    }
+    if (!lockSurface(imageT)) {
+        unlockSurface(imageB);
+        unlockSurface(imageA);
+        deleteSurface(&imageT);
+        return false;
+    }
+    Uint8 *basePtrA = (Uint8 *) imageA->pixels;
+    Uint8 *basePtrB = (Uint8 *) imageB->pixels;
+    Uint8 *basePtrT = (Uint8 *) imageT->pixels;
+    for (int y = 0; y != imageA->h; ++y) {
+        for (int x = 0; x != imageA->w; ++x) {
+            basePtrT[y * imageT->pitch + x] = basePtrA[y * imageA->pitch + x] + basePtrB[y * imageB->pitch + x];
+        }
+    }
+    unlockSurface(imageT);
+    unlockSurface(imageB);
+    unlockSurface(imageA);
+
+    cloneSurface(&imageT, imageCPtr);
+    deleteSurface(&imageT);
+    return true;
+}
+
+bool negative(SDL_Surface **imagePtr) {
+    SDL_Surface *image = *imagePtr;
+    if (!lockSurface(image)) {
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) image->pixels;
+    for (int y = 0; y != image->h; ++y) {
+        for (int x = 0; x != image->w; ++x) {
+            basePtr[y * image->pitch + x] = (Uint8) 255 - basePtr[y * image->pitch + x];
+        }
+    }
+    unlockSurface(image);
+    return true;
+}
