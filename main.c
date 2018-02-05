@@ -420,7 +420,12 @@ bool add(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCP
     Uint8 *basePtrT = (Uint8 *) imageT->pixels;
     for (int y = 0; y != imageA->h; ++y) {
         for (int x = 0; x != imageA->w; ++x) {
-            basePtrT[y * imageT->pitch + x] = basePtrA[y * imageA->pitch + x] + basePtrB[y * imageB->pitch + x];
+            int t = (int) (basePtrA[y * imageA->pitch + x]) + (int) (basePtrB[y * imageB->pitch + x]);
+            if (t > 255) {
+                basePtrT[y * imageT->pitch + x] = 255;
+            } else {
+                basePtrT[y * imageT->pitch + x] = (Uint8) t;
+            }
         }
     }
     unlockSurface(imageT);
