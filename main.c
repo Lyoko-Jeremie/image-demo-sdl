@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <math.h>
+#include <time.h>
 
 #include "global_header.h"
 
@@ -30,6 +31,13 @@ bool mulNumber(SDL_Surface **imagePtr, int num);
 bool medianBlur(SDL_Surface **imageGrayPtr);
 
 bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN);
+
+bool templateOperator(
+        SDL_Surface **imageGrayPtr,
+        int xN, int yN,
+        Uint8 (__cdecl *operator)(Uint8 *boxPtr, int boxSize));
+
+bool medianBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN);
 
 
 int main(int argc, char *argv[]) {
@@ -280,6 +288,7 @@ int main(int argc, char *argv[]) {
         }
 
         assert(imageGray);
+//        srand(time(NULL));
         // 从图像表面中获取图像的像素起点
         Uint8 *basePtr = (Uint8 *) imageGray->pixels;
         for (int i = 0; i != 10000; ++i) {
@@ -296,8 +305,10 @@ int main(int argc, char *argv[]) {
 
 //        medianBlurN(&imageGray, 15, 15);
 //        printf("medianBlurN\n");
-        medianBlur(&imageGray);
-        printf("medianBlur\n");
+//        medianBlur(&imageGray);
+//        printf("medianBlur\n");
+        medianBlurNT(&imageGray, 3, 3);
+        printf("medianBlurNT\n");
 
         clearWindowWithBlack();
         drawImageToWindowWithScale(imageGray, 1);
@@ -340,11 +351,11 @@ int main(int argc, char *argv[]) {
 //
 //        negative(&imageGray);
 
-        clearWindowWithBlack();
 //        saveImage2BMP("g.bmp", imageGray);
 
-        drawImageToWindowWithScale(imageGray, 1);
-        waitKey(0);
+//        clearWindowWithBlack();
+//        drawImageToWindowWithScale(imageGray, 1);
+//        waitKey(0);
 
         deleteSurface(&imageGray);
         deleteSurface(&image);
@@ -697,6 +708,55 @@ bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN) {
             assert(c == xN * xN);
             qsort(box, (size_t) (xN * xN), sizeof(Uint8), Uint8Compare);
             basePtr2[y * imageGray2->pitch + x] = box[(xN * xN - 1) / 2 + 1];
+        }
+    }
+    free(box);
+    box = NULL;
+    unlockSurface(imageGray2);
+    cloneSurface(&imageGray2, imageGrayPtr);
+    deleteSurface(&imageGray2);
+    return true;
+}
+
+Uint8 medianBlurNTFunc(Uint8 *boxPtr, int boxSize) {
+    qsort(boxPtr, (size_t) (boxSize), sizeof(Uint8), Uint8Compare);
+    return boxPtr[(boxSize - 1) / 2 + 1];
+}
+
+bool medianBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN) {
+    return templateOperator(imageGrayPtr, xN, yN, medianBlurNTFunc);
+}
+
+bool templateOperator(
+        SDL_Surface **imageGrayPtr,
+        int xN, int yN,
+        Uint8 (__cdecl *operator)(Uint8 *boxPtr, int boxSize)) {
+    assert(xN >= 3 && yN >= 3 && xN % 2 == 1 && yN % 2 == 1);
+    int shiftX = (xN - 1) / 2;
+    int shiftY = (yN - 1) / 2;
+    SDL_Surface *imageGray = *imageGrayPtr;
+    SDL_Surface *imageGray2 = NULL;
+    cloneSurface(imageGrayPtr, &imageGray2);
+    if (!lockSurface(imageGray2)) {
+        deleteSurface(&imageGray2);
+        return false;
+    }
+    assert(imageGray2);
+    Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+    Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+    const int boxSize = xN * xN;
+    Uint8 *box = (Uint8 *) malloc(boxSize * sizeof(Uint8));
+    for (int y = shiftY; y != imageGray2->h - shiftY; ++y) {
+        for (int x = shiftX; x != imageGray2->w - shiftX; ++x) {
+            int c = 0;
+            for (int yP = y - shiftY; yP != y + shiftY + 1; ++yP) {
+                for (int xP = x - shiftX; xP != x + shiftX + 1; ++xP) {
+                    box[c] = basePtr[yP * imageGray->pitch + xP];
+                    ++c;
+                }
+            }
+            assert(c == xN * xN);
+            basePtr2[y * imageGray2->pitch + x] = (Uint8) operator(box, boxSize);
         }
     }
     free(box);
