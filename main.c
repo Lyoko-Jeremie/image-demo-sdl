@@ -633,7 +633,7 @@ bool divNumber(SDL_Surface **imagePtr, int num) {
     return true;
 }
 
-Uint8 Uint8Compare(const void *a, const void *b) {
+int Uint8Compare(const void *a, const void *b) {
     return (*(Uint8 *) a - *(Uint8 *) b);
 }
 
