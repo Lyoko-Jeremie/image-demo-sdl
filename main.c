@@ -14,7 +14,18 @@ bool dilate(SDL_Surface **imageGrayPtr);
 
 bool add(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCPtr);
 
+bool sub(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCPtr);
+
 bool negative(SDL_Surface **imagePtr);
+
+bool addNumber(SDL_Surface **imagePtr, int num);
+
+bool subNumber(SDL_Surface **imagePtr, int num);
+
+bool divNumber(SDL_Surface **imagePtr, int num);
+
+bool mulNumber(SDL_Surface **imagePtr, int num);
+
 
 int main(int argc, char *argv[]) {
     printf("Hello, World!\n");
@@ -437,6 +448,54 @@ bool add(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCP
     return true;
 }
 
+bool sub(SDL_Surface **imageAPtr, SDL_Surface **imageBPtr, SDL_Surface **imageCPtr) {
+    SDL_Surface *imageA = *imageAPtr;
+    SDL_Surface *imageB = *imageBPtr;
+
+    if (!(imageA->w == imageB->w && imageA->h == imageB->h)) {
+        return false;
+    }
+
+    SDL_Surface *imageT = NULL;
+    cloneSurface(&imageA, &imageT);
+
+    if (!lockSurface(imageA)) {
+        deleteSurface(&imageT);
+        return false;
+    }
+    if (!lockSurface(imageB)) {
+        unlockSurface(imageA);
+        deleteSurface(&imageT);
+        return false;
+    }
+    if (!lockSurface(imageT)) {
+        unlockSurface(imageB);
+        unlockSurface(imageA);
+        deleteSurface(&imageT);
+        return false;
+    }
+    Uint8 *basePtrA = (Uint8 *) imageA->pixels;
+    Uint8 *basePtrB = (Uint8 *) imageB->pixels;
+    Uint8 *basePtrT = (Uint8 *) imageT->pixels;
+    for (int y = 0; y != imageA->h; ++y) {
+        for (int x = 0; x != imageA->w; ++x) {
+            int t = (int) (basePtrA[y * imageA->pitch + x]) - (int) (basePtrB[y * imageB->pitch + x]);
+            if (t < 0) {
+                basePtrT[y * imageT->pitch + x] = 0;
+            } else {
+                basePtrT[y * imageT->pitch + x] = (Uint8) t;
+            }
+        }
+    }
+    unlockSurface(imageT);
+    unlockSurface(imageB);
+    unlockSurface(imageA);
+
+    cloneSurface(&imageT, imageCPtr);
+    deleteSurface(&imageT);
+    return true;
+}
+
 bool negative(SDL_Surface **imagePtr) {
     SDL_Surface *image = *imagePtr;
     if (!lockSurface(image)) {
@@ -451,3 +510,92 @@ bool negative(SDL_Surface **imagePtr) {
     unlockSurface(image);
     return true;
 }
+
+bool addNumber(SDL_Surface **imagePtr, int num) {
+    SDL_Surface *image = *imagePtr;
+    if (!lockSurface(image)) {
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) image->pixels;
+    for (int y = 0; y != image->h; ++y) {
+        for (int x = 0; x != image->w; ++x) {
+            int t = (int) (basePtr[y * image->pitch + x]) + num;
+            if (t > 255) {
+                basePtr[y * image->pitch + x] = 255;
+            } else if (t < 0) {
+                basePtr[y * image->pitch + x] = 0;
+            } else {
+                basePtr[y * image->pitch + x] = (Uint8) t;
+            }
+        }
+    }
+    unlockSurface(image);
+    return true;
+}
+
+bool subNumber(SDL_Surface **imagePtr, int num) {
+    SDL_Surface *image = *imagePtr;
+    if (!lockSurface(image)) {
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) image->pixels;
+    for (int y = 0; y != image->h; ++y) {
+        for (int x = 0; x != image->w; ++x) {
+            int t = (int) (basePtr[y * image->pitch + x]) - num;
+            if (t > 255) {
+                basePtr[y * image->pitch + x] = 255;
+            } else if (t < 0) {
+                basePtr[y * image->pitch + x] = 0;
+            } else {
+                basePtr[y * image->pitch + x] = (Uint8) t;
+            }
+        }
+    }
+    unlockSurface(image);
+    return true;
+}
+
+bool mulNumber(SDL_Surface **imagePtr, int num) {
+    SDL_Surface *image = *imagePtr;
+    if (!lockSurface(image)) {
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) image->pixels;
+    for (int y = 0; y != image->h; ++y) {
+        for (int x = 0; x != image->w; ++x) {
+            int t = (int) (basePtr[y * image->pitch + x]) * num;
+            if (t > 255) {
+                basePtr[y * image->pitch + x] = 255;
+            } else if (t < 0) {
+                basePtr[y * image->pitch + x] = 0;
+            } else {
+                basePtr[y * image->pitch + x] = (Uint8) t;
+            }
+        }
+    }
+    unlockSurface(image);
+    return true;
+}
+
+bool divNumber(SDL_Surface **imagePtr, int num) {
+    SDL_Surface *image = *imagePtr;
+    if (!lockSurface(image)) {
+        return false;
+    }
+    Uint8 *basePtr = (Uint8 *) image->pixels;
+    for (int y = 0; y != image->h; ++y) {
+        for (int x = 0; x != image->w; ++x) {
+            int t = (int) (basePtr[y * image->pitch + x]) / num;
+            if (t > 255) {
+                basePtr[y * image->pitch + x] = 255;
+            } else if (t < 0) {
+                basePtr[y * image->pitch + x] = 0;
+            } else {
+                basePtr[y * image->pitch + x] = (Uint8) t;
+            }
+        }
+    }
+    unlockSurface(image);
+    return true;
+}
+
