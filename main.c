@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <stdbool.h>
 #include <math.h>
@@ -25,6 +26,10 @@ bool subNumber(SDL_Surface **imagePtr, int num);
 bool divNumber(SDL_Surface **imagePtr, int num);
 
 bool mulNumber(SDL_Surface **imagePtr, int num);
+
+bool medianBlur(SDL_Surface **imageGrayPtr);
+
+bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN);
 
 
 int main(int argc, char *argv[]) {
@@ -277,41 +282,70 @@ int main(int argc, char *argv[]) {
         assert(imageGray);
         // 从图像表面中获取图像的像素起点
         Uint8 *basePtr = (Uint8 *) imageGray->pixels;
-        for (int y = 0; y != imageGray->w; ++y) {
-            for (int x = 0; x != imageGray->h; ++x) {
-                // 从单通道灰度图像中读取一个像素
-                Uint8 pixel = basePtr[y * imageGray->pitch + x];
-                if (pixel < 128) {
-                    pixel = 0;
-                } else {
-                    pixel = 255;
-                }
-                // 将一个像素写入到单通道图像
-                basePtr[y * imageGray->pitch + x] = pixel;
-            }
+        for (int i = 0; i != 10000; ++i) {
+            basePtr[rand() % imageGray->h * imageGray->pitch + rand() % imageGray->w]
+                    = (Uint8) (rand() % 2 == 0 ? 0 : 255);
         }
 
         unlockSurface(imageGray);
-
-        if (true) {
-            for (int i = 0; i != 5; ++i) {
-                dilate(&imageGray);
-            }
-        }
-
-        if (true) {
-            for (int i = 0; i != 5; ++i) {
-                erode(&imageGray);
-            }
-        }
-
-        negative(&imageGray);
+        printf("rand\n");
 
         clearWindowWithBlack();
         drawImageToWindowWithScale(imageGray, 1);
-        saveImage2BMP("g.bmp", imageGray);
-
         waitKey(0);
+
+//        medianBlurN(&imageGray, 15, 15);
+//        printf("medianBlurN\n");
+        medianBlur(&imageGray);
+        printf("medianBlur\n");
+
+        clearWindowWithBlack();
+        drawImageToWindowWithScale(imageGray, 1);
+        waitKey(0);
+
+//        if (!lockSurface(imageGray)) {
+//            return (1);
+//        }
+//
+//        assert(imageGray);
+//        // 从图像表面中获取图像的像素起点
+//        Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+//        for (int y = 0; y != imageGray->h; ++y) {
+//            for (int x = 0; x != imageGray->w; ++x) {
+//                // 从单通道灰度图像中读取一个像素
+//                Uint8 pixel = basePtr[y * imageGray->pitch + x];
+//                if (pixel < 128) {
+//                    pixel = 0;
+//                } else {
+//                    pixel = 255;
+//                }
+//                // 将一个像素写入到单通道图像
+//                basePtr[y * imageGray->pitch + x] = pixel;
+//            }
+//        }
+//
+//        unlockSurface(imageGray);
+
+//        if (true) {
+//            for (int i = 0; i != 5; ++i) {
+//                dilate(&imageGray);
+//            }
+//        }
+//
+//        if (true) {
+//            for (int i = 0; i != 5; ++i) {
+//                erode(&imageGray);
+//            }
+//        }
+//
+//        negative(&imageGray);
+
+        clearWindowWithBlack();
+//        saveImage2BMP("g.bmp", imageGray);
+
+        drawImageToWindowWithScale(imageGray, 1);
+        waitKey(0);
+
         deleteSurface(&imageGray);
         deleteSurface(&image);
     }
@@ -598,4 +632,79 @@ bool divNumber(SDL_Surface **imagePtr, int num) {
     unlockSurface(image);
     return true;
 }
+
+Uint8 Uint8Compare(const void *a, const void *b) {
+    return (*(Uint8 *) a - *(Uint8 *) b);
+}
+
+bool medianBlur(SDL_Surface **imageGrayPtr) {
+    SDL_Surface *imageGray = *imageGrayPtr;
+    SDL_Surface *imageGray2 = NULL;
+    cloneSurface(imageGrayPtr, &imageGray2);
+    if (!lockSurface(imageGray2)) {
+        deleteSurface(&imageGray2);
+        return false;
+    }
+    assert(imageGray2);
+    Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+    Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+    for (int y = 1; y != imageGray2->h - 1; ++y) {
+        for (int x = 1; x != imageGray2->w - 1; ++x) {
+            Uint8 box[9];
+            box[0] = basePtr[(y - 1) * imageGray->pitch + x - 1];
+            box[1] = basePtr[(y - 1) * imageGray->pitch + x];
+            box[2] = basePtr[(y - 1) * imageGray->pitch + x + 1];
+            box[3] = basePtr[(y) * imageGray->pitch + x - 1];
+            box[4] = basePtr[(y) * imageGray->pitch + x];
+            box[5] = basePtr[(y) * imageGray->pitch + x + 1];
+            box[6] = basePtr[(y + 1) * imageGray->pitch + x - 1];
+            box[7] = basePtr[(y + 1) * imageGray->pitch + x];
+            box[8] = basePtr[(y + 1) * imageGray->pitch + x + 1];
+            qsort(box, 9, sizeof(Uint8), Uint8Compare);
+            basePtr2[y * imageGray2->pitch + x] = box[4];
+        }
+    }
+    unlockSurface(imageGray2);
+    cloneSurface(&imageGray2, imageGrayPtr);
+    deleteSurface(&imageGray2);
+    return true;
+}
+
+bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN) {
+    assert(xN >= 3 && yN >= 3 && xN % 2 == 1 && yN % 2 == 1);
+    int shiftX = (xN - 1) / 2;
+    int shiftY = (yN - 1) / 2;
+    SDL_Surface *imageGray = *imageGrayPtr;
+    SDL_Surface *imageGray2 = NULL;
+    cloneSurface(imageGrayPtr, &imageGray2);
+    if (!lockSurface(imageGray2)) {
+        deleteSurface(&imageGray2);
+        return false;
+    }
+    assert(imageGray2);
+    Uint8 *basePtr = (Uint8 *) imageGray->pixels;
+    Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
+    Uint8 *box = (Uint8 *) malloc(xN * xN * sizeof(Uint8));
+    for (int y = shiftY; y != imageGray2->h - shiftY; ++y) {
+        for (int x = shiftX; x != imageGray2->w - shiftX; ++x) {
+            int c = 0;
+            for (int yP = y - shiftY; yP != y + shiftY + 1; ++yP) {
+                for (int xP = x - shiftX; xP != x + shiftX + 1; ++xP) {
+                    box[c] = basePtr[yP * imageGray->pitch + xP];
+                    ++c;
+                }
+            }
+            assert(c == xN * xN);
+            qsort(box, (size_t) (xN * xN), sizeof(Uint8), Uint8Compare);
+            basePtr2[y * imageGray2->pitch + x] = box[(xN * xN - 1) / 2 + 1];
+        }
+    }
+    free(box);
+    box = NULL;
+    unlockSurface(imageGray2);
+    cloneSurface(&imageGray2, imageGrayPtr);
+    deleteSurface(&imageGray2);
+    return true;
+}
+
 
