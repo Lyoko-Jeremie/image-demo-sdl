@@ -39,6 +39,9 @@ bool templateOperator(
 
 bool medianBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN);
 
+bool meanBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN);
+
+bool conservativeBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN);
 
 int main(int argc, char *argv[]) {
     printf("Hello, World!\n");
@@ -307,8 +310,12 @@ int main(int argc, char *argv[]) {
 //        printf("medianBlurN\n");
 //        medianBlur(&imageGray);
 //        printf("medianBlur\n");
-        medianBlurNT(&imageGray, 3, 3);
-        printf("medianBlurNT\n");
+//        medianBlurNT(&imageGray, 3, 3);
+//        printf("medianBlurNT\n");
+//        meanBlurNT(&imageGray, 3, 3);
+//        printf("meanBlurNT\n");
+        conservativeBlurNT(&imageGray, 3, 3);
+        printf("conservativeBlurNT\n");
 
         clearWindowWithBlack();
         drawImageToWindowWithScale(imageGray, 1);
@@ -707,7 +714,7 @@ bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN) {
             }
             assert(c == xN * xN);
             qsort(box, (size_t) (xN * xN), sizeof(Uint8), Uint8Compare);
-            basePtr2[y * imageGray2->pitch + x] = box[(xN * xN - 1) / 2 + 1];
+            basePtr2[y * imageGray2->pitch + x] = box[(xN * xN - 1) / 2 + 1 - 1];
         }
     }
     free(box);
@@ -720,11 +727,47 @@ bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN) {
 
 Uint8 medianBlurNTFunc(Uint8 *boxPtr, int boxSize) {
     qsort(boxPtr, (size_t) (boxSize), sizeof(Uint8), Uint8Compare);
-    return boxPtr[(boxSize - 1) / 2 + 1];
+    return boxPtr[(boxSize - 1) / 2 + 1 - 1];
 }
 
 bool medianBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN) {
     return templateOperator(imageGrayPtr, xN, yN, medianBlurNTFunc);
+}
+
+Uint8 meanBlurNTFunc(Uint8 *boxPtr, int boxSize) {
+    int sum = 0;
+    for (int i = 0; i != boxSize; ++i) {
+        sum += (int) boxPtr[i];
+    }
+    sum /= boxSize;
+    return (Uint8) sum;
+}
+
+bool meanBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN) {
+    return templateOperator(imageGrayPtr, xN, yN, meanBlurNTFunc);
+}
+
+Uint8 conservativeBlurNTFunc(Uint8 *boxPtr, int boxSize) {
+    Uint8 max = 0, min = 255;
+    int thisIndex = (boxSize - 1) / 2 + 1 - 1;
+    for (int i = 0; i != boxSize; ++i) {
+        if (i == thisIndex) {
+            continue;
+        }
+        max = max < boxPtr[i] ? boxPtr[i] : max;
+        min = min > boxPtr[i] ? boxPtr[i] : min;
+    }
+    if (boxPtr[thisIndex] < min) {
+        return min;
+    } else if (boxPtr[thisIndex] > max) {
+        return max;
+    } else {
+        return boxPtr[thisIndex];
+    }
+}
+
+bool conservativeBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN) {
+    return templateOperator(imageGrayPtr, xN, yN, conservativeBlurNTFunc);
 }
 
 bool templateOperator(
