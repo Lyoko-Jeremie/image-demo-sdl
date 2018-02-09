@@ -32,6 +32,12 @@ bool medianBlur(SDL_Surface **imageGrayPtr);
 
 bool medianBlurN(SDL_Surface **imageGrayPtr, int xN, int yN);
 
+bool templateOperatorM(
+        SDL_Surface **imageGrayPtr,
+        int xN, int yN,
+        int xTC, int yTC,
+        Uint8 (__cdecl *operator)(Uint8 *boxPtr, int boxSize));
+
 bool templateOperator(
         SDL_Surface **imageGrayPtr,
         int xN, int yN,
@@ -770,13 +776,17 @@ bool conservativeBlurNT(SDL_Surface **imageGrayPtr, int xN, int yN) {
     return templateOperator(imageGrayPtr, xN, yN, conservativeBlurNTFunc);
 }
 
-bool templateOperator(
+bool templateOperatorM(
         SDL_Surface **imageGrayPtr,
         int xN, int yN,
+        int xTC, int yTC,
         Uint8 (__cdecl *operator)(Uint8 *boxPtr, int boxSize)) {
-    assert(xN >= 3 && yN >= 3 && xN % 2 == 1 && yN % 2 == 1);
-    int shiftX = (xN - 1) / 2;
-    int shiftY = (yN - 1) / 2;
+    assert(xN > xTC && yN > yTC);
+    int shiftXU = xTC;
+    int shiftYU = yTC;
+    int shiftXD = xN - xTC - 1;
+    int shiftYD = yN - yTC - 1;
+    assert(shiftXU >= 0 && shiftYU >= 0 && shiftXD >= 0 && shiftYD >= 0);
     SDL_Surface *imageGray = *imageGrayPtr;
     SDL_Surface *imageGray2 = NULL;
     cloneSurface(imageGrayPtr, &imageGray2);
@@ -789,11 +799,11 @@ bool templateOperator(
     Uint8 *basePtr2 = (Uint8 *) imageGray2->pixels;
     const int boxSize = xN * xN;
     Uint8 *box = (Uint8 *) malloc(boxSize * sizeof(Uint8));
-    for (int y = shiftY; y != imageGray2->h - shiftY; ++y) {
-        for (int x = shiftX; x != imageGray2->w - shiftX; ++x) {
+    for (int y = shiftYU; y != imageGray2->h - shiftYD; ++y) {
+        for (int x = shiftXU; x != imageGray2->w - shiftXD; ++x) {
             int c = 0;
-            for (int yP = y - shiftY; yP != y + shiftY + 1; ++yP) {
-                for (int xP = x - shiftX; xP != x + shiftX + 1; ++xP) {
+            for (int yP = y - shiftYU; yP != y + shiftYD + 1; ++yP) {
+                for (int xP = x - shiftXU; xP != x + shiftXD + 1; ++xP) {
                     box[c] = basePtr[yP * imageGray->pitch + xP];
                     ++c;
                 }
@@ -808,6 +818,16 @@ bool templateOperator(
     cloneSurface(&imageGray2, imageGrayPtr);
     deleteSurface(&imageGray2);
     return true;
+}
+
+bool templateOperator(
+        SDL_Surface **imageGrayPtr,
+        int xN, int yN,
+        Uint8 (__cdecl *operator)(Uint8 *boxPtr, int boxSize)) {
+    assert(xN >= 3 && yN >= 3 && xN % 2 == 1 && yN % 2 == 1);
+    int xTC = (xN - 1) / 2;
+    int yTC = (yN - 1) / 2;
+    return templateOperatorM(imageGrayPtr, xN, yN, xTC, yTC, operator);
 }
 
 
